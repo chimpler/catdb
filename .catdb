@@ -1,0 +1,32 @@
+{
+	# block read by catdb
+	databases {
+	    testdb: ${defaults.mysql} {
+			hostname: localhost
+			database: testdb
+			type: postgres
+	    }
+
+	    dynamo: ${defaults.aws} {
+	        prefix:
+	    }
+	}
+
+	s3: ${defaults.aws} {
+        bucket:
+        prefix:
+	}
+
+	# default values to make things easier but not used directly by catdb
+	defaults {
+		mysql {
+			username: scott
+			password: tiger
+		}
+        aws {
+            region: us-east-1
+            aws_access_key_id: ${AWS_ACCESS_KEY_ID}
+            aws_secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+        }
+	}
+}
