@@ -53,6 +53,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'catdb=catdb.main:main'
         ]
     },
     test_suite='tests',

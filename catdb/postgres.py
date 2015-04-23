@@ -90,18 +90,25 @@ class Postgres(Db):
                     ]
                 }
 
-    def create_table_statement(self, ddl):
+    # TODO move it to Db
+    def create_table_statement(self, ddl, schema, table):
         def column_def(entry):
             col_type, _, opt_format = Postgres.DATA_TYPES_MAPPING[entry['data_type']]
             type_option = '' if opt_format is None else '(' + opt_format.format(size=entry['size'],
                                                                                 scale=entry['scale']) + ')'
+            null_str = ' NULL' if ['nullable'] else ' NOT NULL'
             default_option = '' if entry['default'] is None else ' DEFAULT ' + (
                 "'" + entry['default'] + "'" if entry['data_type'] in Db.QUOTED_TYPES else entry['default'])
-            return entry['column'] + ' ' + col_type + type_option + default_option
+            return entry['column'] + ' ' \
+                + col_type \
+                + type_option \
+                + null_str \
+                + default_option
 
         column_str = ',\n    '.join(column_def(entry) for entry in ddl['columns'])
-        schema_str = ('' if ddl['schema'] is None else ddl['schema'] + '.')
-        return 'CREATE TABLE ' + schema_str + ddl['table'] + ' (\n    ' \
+        schema_str = ('' if schema is None else schema + '.')
+
+        return 'CREATE TABLE ' + schema_str + table + ' (\n    ' \
                + column_str \
                + '\n);'
 
@@ -116,9 +123,30 @@ class Postgres(Db):
                     ))
 
                 first = True
+                yield [desc[0] for desc in cursor.description]
                 while first or rows:
                     rows = cursor.fetchmany()
                     for row in rows:
                         yield row
                     first = False
 
+    def get_connection(self):
+
+        conn = psycopg2.connect("dbname={dbname} user={user}".format(dbname=self._params['database'],
+                                                                     user=self._params['username']))
+        return Connection(conn)
+
+
+class Connection(object):
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, query):
+        with self._conn.cursor() as cursor:
+            cursor.execute(query)
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
