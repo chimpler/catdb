@@ -3,6 +3,10 @@ import importlib
 
 
 class Db(object):
+    QUOTED_TYPES = [
+        'JSON', 'CHAR', 'VARCHAR', 'LONGVARCHAR', 'DATE', 'TIME', 'TIMESTAMP', 'BINARY', 'VARBINARY', 'LONGVARBINARY', 'BLOB', 'CLOB'
+    ]
+
     def __init__(self, params={}):
         self._params = params
 
