@@ -48,7 +48,8 @@ setup(
     install_requires=[
         'pyhocon==0.3.0',
         'psycopg2==2.6',
-        'boto3==0.0.16'
+        'boto3==0.0.16',
+        'PyMySQL==0.6.6'
     ],
     tests_require=['pytest'],
     entry_points={

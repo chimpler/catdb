@@ -7,7 +7,7 @@ class Db(object):
     ROW_BUFFER_SIZE = 1000
 
     QUOTED_TYPES = [
-        'JSON', 'CHAR', 'VARCHAR', 'LONGVARCHAR', 'DATE', 'TIME', 'TIMESTAMP', 'BINARY', 'VARBINARY', 'LONGVARBINARY', 'BLOB', 'CLOB'
+        'JSON', 'XML', 'CHAR', 'VARCHAR', 'LONGVARCHAR', 'DATE', 'TIME', 'TIMESTAMP', 'BINARY', 'VARBINARY', 'LONGVARBINARY', 'BLOB', 'CLOB'
     ]
 
     def __init__(self, params={}):
@@ -22,10 +22,6 @@ class Db(object):
         pass
 
     @abstractmethod
-    def create_table_statement(self, ddl, schema, table):
-        pass
-
-    @abstractmethod
     def export_data(self, schema=None, table=None):
         pass
 
@@ -33,12 +29,34 @@ class Db(object):
     def get_connection(self):
         pass
 
+    def create_table_statement(self, ddl, schema, table):
+        def column_def(entry):
+            col_type, _, opt_format = self.__class__.DATA_TYPES_MAPPING[entry['data_type']]
+            type_option = '' if opt_format is None else '(' + opt_format.format(size=entry['size'],
+                                                                                scale=entry['scale']) + ')'
+            null_str = ' NULL' if ['nullable'] else ' NOT NULL'
+            default_option = '' if entry['default'] is None else ' DEFAULT ' + (
+                "'" + entry['default'] + "'" if entry['data_type'] in Db.QUOTED_TYPES else entry['default'])
+            return entry['column'] + ' ' \
+                + col_type \
+                + type_option \
+                + null_str \
+                + default_option
+
+        column_str = ',\n    '.join(column_def(entry) for entry in ddl['columns'])
+        schema_str = ('' if schema is None else schema + '.')
+
+        return 'CREATE TABLE ' + schema_str + table + ' (\n    ' \
+               + column_str \
+               + '\n);'
+
     def execute(self, query):
         conn = self.get_connection()
         try:
             conn.execute(query)
-        except Exception as e:
+        except Exception:
             conn.rollback()
+            raise
         else:
             conn.commit()
 

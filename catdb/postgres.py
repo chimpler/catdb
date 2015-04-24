@@ -12,6 +12,7 @@ class Postgres(Db):
     # TODO ENUM
     # type, reverse mapping, opt_format, quoted
     DATA_TYPES_MAPPING = {
+        'XML': ('XML', True, None),
         'JSON': ('JSON', True, None),
         'BOOLEAN': ('BOOLEAN', True, None),
         'BIT': ('BIT', True, None),
@@ -21,8 +22,8 @@ class Postgres(Db):
         'INTEGER': ('INTEGER', True, None),
         'BIGINT': ('BIGINT', True, None),
         'FLOAT': ('REAL', False, None),
-        'DOUBLE': ('DOUBLE PRECISION', True),
-        'REAL': ('REAL', True),
+        'DOUBLE': ('DOUBLE PRECISION', True, None),
+        'REAL': ('REAL', True, None),
         'NUMERIC': ('NUMERIC', True, '{size},{scale}'),
         'DECIMAL': ('NUMERIC', False, '{size},{scale}'),
         'CHAR': ('CHARACTER', True, '{size}'),
@@ -40,9 +41,13 @@ class Postgres(Db):
 
     REV_DATA_TYPES_MAPPING = {d[0]: k for k, d in DATA_TYPES_MAPPING.items() if d[1]}
 
+    def __get_connect_string(self):
+        return "dbname={dbname} user={user} password={password}".format(dbname=self._params['database'],
+                                                                        user=self._params['username'],
+                                                                        password=self._params['password'])
+
     def list_tables(self, schema=None, filter=None):
-        with psycopg2.connect("dbname={dbname} user={user}".format(dbname=self._params['database'],
-                                                                   user=self._params['username'])) as conn:
+        with psycopg2.connect(self.__get_connect_string()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     "SELECT table_name FROM information_schema.tables WHERE table_schema = '{schema}' AND table_name LIKE '{filter}'".format(
@@ -52,8 +57,7 @@ class Postgres(Db):
                 return [table[0] for table in cursor.fetchall()]
 
     def describe_table(self, schema, table):
-        with psycopg2.connect("dbname={dbname} user={user}".format(dbname=self._params['database'],
-                                                                   user=self._params['username'])) as conn:
+        with psycopg2.connect(self.__get_connect_string()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """SELECT
@@ -90,31 +94,8 @@ class Postgres(Db):
                     ]
                 }
 
-    # TODO move it to Db
-    def create_table_statement(self, ddl, schema, table):
-        def column_def(entry):
-            col_type, _, opt_format = Postgres.DATA_TYPES_MAPPING[entry['data_type']]
-            type_option = '' if opt_format is None else '(' + opt_format.format(size=entry['size'],
-                                                                                scale=entry['scale']) + ')'
-            null_str = ' NULL' if ['nullable'] else ' NOT NULL'
-            default_option = '' if entry['default'] is None else ' DEFAULT ' + (
-                "'" + entry['default'] + "'" if entry['data_type'] in Db.QUOTED_TYPES else entry['default'])
-            return entry['column'] + ' ' \
-                + col_type \
-                + type_option \
-                + null_str \
-                + default_option
-
-        column_str = ',\n    '.join(column_def(entry) for entry in ddl['columns'])
-        schema_str = ('' if schema is None else schema + '.')
-
-        return 'CREATE TABLE ' + schema_str + table + ' (\n    ' \
-               + column_str \
-               + '\n);'
-
     def export_data(self, schema=None, table=None):
-        with psycopg2.connect("dbname={dbname} user={user}".format(dbname=self._params['database'],
-                                                                   user=self._params['username'])) as conn:
+        with psycopg2.connect(self.__get_connect_string()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     "SELECT * FROM {schema}.{table_name}".format(
@@ -131,9 +112,7 @@ class Postgres(Db):
                     first = False
 
     def get_connection(self):
-
-        conn = psycopg2.connect("dbname={dbname} user={user}".format(dbname=self._params['database'],
-                                                                     user=self._params['username']))
+        conn = psycopg2.connect(self.__get_connect_string())
         return Connection(conn)
 
 
@@ -147,6 +126,9 @@ class Connection(object):
 
     def commit(self):
         self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
 
     def close(self):
         self._conn.close()

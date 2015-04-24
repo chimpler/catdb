@@ -1,12 +1,16 @@
 {
 	# block read by catdb
 	databases {
-	    testdb: ${defaults.mysql} {
+	    pg_testdb: ${defaults.credentials} {
 			hostname: localhost
 			database: testdb
 			type: postgres
 	    }
-
+	    my_testdb: ${defaults.credentials} {
+			hostname: localhost
+			database: testdb
+			type: mysql
+	    }
 	    dynamo: ${defaults.aws} {
 	        prefix:
 	    }
@@ -19,7 +23,7 @@
 
 	# default values to make things easier but not used directly by catdb
 	defaults {
-		mysql {
+		credentials {
 			username: scott
 			password: tiger
 		}

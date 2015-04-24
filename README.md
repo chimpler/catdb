@@ -9,13 +9,22 @@ CatDB allows to migrate data from various databases.
 Create a file `$HOME/.catdb` with the list of databases to use:
 
 	databases {
-	    testdb: ${defaults.mysql} {
+	    testdb: ${defaults.postgres} {
 			hostname: localhost
 			database: testdb
 			type: postgres
 	    }
 	}
 	    
+	defaults {
+		postgres {
+			username: scott
+			password: tiger
+		}
+	}
+
+The file uses the [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) format.
+	
 At the moment the following databases are supported:
 
 - Postgres / Redshift
