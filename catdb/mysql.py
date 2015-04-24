@@ -1,4 +1,3 @@
-import psycopg2
 import pymysql
 from catdb.db import Db
 

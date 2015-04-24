@@ -14,6 +14,11 @@ Create a file `$HOME/.catdb` with the list of databases to use:
 			database: testdb
 			type: postgres
 	    }
+	    my_testdb: ${defaults.credentials} {
+			hostname: localhost
+			database: testdb
+			type: mysql
+	    }
 	}
 	    
 	defaults {
@@ -31,13 +36,25 @@ At the moment the following databases are supported:
 
 ### Usage
 
+List tables:
+
+	catdb list -d <database>
+
 Generate DDL:
+
+	catdb ddl -d <database> -t <table> -e <file or ->
 
 Create table from DDL:
 
+	catdb ddl -d <database> -t <table> -i <file or ->
+
 Dump data:
 
+	catdb data -d <database> -t <table> -e <file or ->
+
 Create data from dump:
+
+	catdb data -d <database> -t <table> -i <file or ->
 
 ### TODO
 
