@@ -3,6 +3,7 @@
 	databases {
 	    pg_testdb: ${defaults.credentials} {
 			hostname: localhost
+			port: 5432
 			database: testdb
 			type: postgres
 	    }

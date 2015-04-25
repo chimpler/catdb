@@ -34,7 +34,7 @@ class Db(object):
             col_type, _, opt_format = self.__class__.DATA_TYPES_MAPPING[entry['data_type']]
             type_option = '' if opt_format is None else '(' + opt_format.format(size=entry['size'],
                                                                                 scale=entry['scale']) + ')'
-            null_str = ' NULL' if ['nullable'] else ' NOT NULL'
+            null_str = '' if ['nullable'] else ' NOT NULL'
             default_option = '' if entry['default'] is None else ' DEFAULT ' + (
                 "'" + entry['default'] + "'" if entry['data_type'] in Db.QUOTED_TYPES else entry['default'])
             return entry['column'] + ' ' \

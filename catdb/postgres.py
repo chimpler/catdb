@@ -39,15 +39,24 @@ class Postgres(Db):
         'CLOB': ('TEXT', True, None)
     }
 
-    REV_DATA_TYPES_MAPPING = {d[0]: k for k, d in DATA_TYPES_MAPPING.items() if d[1]}
+    DEFAULT_VALUE_MAPPING = {
+        'CURRENT_TIMESTAMP': 'NOW()'
+    }
 
-    def __get_connect_string(self):
-        return "dbname={dbname} user={user} password={password}".format(dbname=self._params['database'],
-                                                                        user=self._params['username'],
-                                                                        password=self._params['password'])
+    REV_DATA_TYPES_MAPPING = {d[0]: k for k, d in DATA_TYPES_MAPPING.items() if d[1]}
+    REV_DEFAULT_VALUE_MAPPING = {v: k for k, v in DEFAULT_VALUE_MAPPING.items()}
+
+    def __get_connect_params(self):
+        return {
+            'database': self._params['database'],
+            'host': self._params.get('hostname'),
+            'port': self._params.get('port'),
+            'user': self._params.get('username'),
+            'password': self._params.get('password')
+        }
 
     def list_tables(self, schema=None, filter=None):
-        with psycopg2.connect(self.__get_connect_string()) as conn:
+        with psycopg2.connect(**self.__get_connect_params()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     "SELECT table_name FROM information_schema.tables WHERE table_schema = '{schema}' AND table_name LIKE '{filter}'".format(
@@ -57,7 +66,11 @@ class Postgres(Db):
                 return [table[0] for table in cursor.fetchall()]
 
     def describe_table(self, schema, table):
-        with psycopg2.connect(self.__get_connect_string()) as conn:
+        def parse_default_value(default_Value):
+            formatted_value = default_value.split(':')[0].strip("'").upper() if default_value else None
+            return Postgres.REV_DEFAULT_VALUE_MAPPING.get(formatted_value, formatted_value)
+
+        with psycopg2.connect(**self.__get_connect_params()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """SELECT
@@ -82,7 +95,7 @@ class Postgres(Db):
                         {
                             'column': column,
                             'data_type': Postgres.REV_DATA_TYPES_MAPPING[data_type.upper()],
-                            'default': default_value.split(':')[0].strip("'") if default_value else None,
+                            'default': parse_default_value(default_value),
                             'nullable': nullable == 'YES',
                             'size': numeric_precision if length is None else length,
                             'radix': numeric_precision_radix,
@@ -95,7 +108,7 @@ class Postgres(Db):
                 }
 
     def export_data(self, schema=None, table=None):
-        with psycopg2.connect(self.__get_connect_string()) as conn:
+        with psycopg2.connect(**self.__get_connect_params()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     "SELECT * FROM {schema}.{table_name}".format(
@@ -112,7 +125,7 @@ class Postgres(Db):
                     first = False
 
     def get_connection(self):
-        conn = psycopg2.connect(self.__get_connect_string())
+        conn = psycopg2.connect(self.__get_connect_params())
         return Connection(conn)
 
 

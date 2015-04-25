@@ -9,7 +9,7 @@ CatDB allows to migrate data from various databases.
 Create a file `$HOME/.catdb` with the list of databases to use:
 
 	databases {
-	    testdb: ${defaults.postgres} {
+	    testdb: ${defaults.credentials} {
 			hostname: localhost
 			database: testdb
 			type: postgres
@@ -22,7 +22,7 @@ Create a file `$HOME/.catdb` with the list of databases to use:
 	}
 	    
 	defaults {
-		postgres {
+		credentials {
 			username: scott
 			password: tiger
 		}
@@ -52,7 +52,7 @@ Dump data:
 
 	catdb data -d <database> -t <table> -e <file or ->
 
-Create data from dump:
+Import data from dump:
 
 	catdb data -d <database> -t <table> -i <file or ->
 
@@ -60,14 +60,17 @@ Create data from dump:
 
 Items                                  | Status
 -------------------------------------- | :-----:
-Postgres DDL                           | :x:
-Postgres Data                          | :x:
-MySQL DDL                              | :x:
-SQLite DDL                             | :x:
-Dynamo DDL                             | :x:
-Data CSV import/export                 | :x:                 
-Support Hive                           | :x:
-Support SOLR                           | :x:
+Postgres                               | :x:
+MySQL                                  | :x:
+Oracle                                 | :x:
+Vertica                                | :x:
+SQLite                                 | :x:
+Dynamo                                 | :x:
+Hive                                   | :x:
+SOLR                                   | :x:
+Cassandra                              | :x:
+Elastic Search                         | :x:
+MongoDB                                | :x:
 Export to S3                           | :x:
 Import from S3                         | :x:
 Common console                         | :x:
