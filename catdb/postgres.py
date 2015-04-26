@@ -31,7 +31,7 @@ class Postgres(Db):
                     ))
                 return [table[0] for table in cursor.fetchall()]
 
-    def describe_table(self, schema, table):
+    def get_column_info(self, schema, table):
         with psycopg2.connect(**self.__get_connect_params()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(

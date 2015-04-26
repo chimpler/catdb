@@ -16,7 +16,11 @@ class Db(object):
         self._params = params
         self._dbname = dbname
         mappings = ConfigFactory().parse_file(pkg_resources.resource_filename(__name__, 'mappings.conf'))
+
+        # mapping coltype => {mapping} instead of coltype => db => {mapping}
         self._mappings = {k: d[dbname] for k, d in mappings['mappings'].items()}
+
+        # reverse mapping
         self._rev_mappings = {
             d[dbname]['type']: {
                 'type': k,
@@ -31,7 +35,7 @@ class Db(object):
         pass
 
     @abstractmethod
-    def describe_table(self, schema, table):
+    def get_column_info(self, schema, table):
         pass
 
     @abstractmethod
@@ -42,31 +46,35 @@ class Db(object):
     def get_connection(self):
         pass
 
-    def get_ddl(self, schema=None, table=None):
-        # translate db specific ddl to generic ddl
-        meta = self.describe_table(schema, table)
-
+    def get_ddl(self, schema=None, table_filter=None):
+        """translate db specific ddl to generic ddl"""
         def get_default(col_type, value):
             return self._rev_mappings[col_type]['defaults'].get(value)
+
+        def get_column_def(entry):
+            row = {
+                'column': entry['column'],
+                'radix': entry['radix'],
+                'scale': entry['scale'],
+                'size': entry['size'],
+                'type': self._rev_mappings[entry['type']]['type'],
+                'default': get_default(entry['type'], entry['default'])
+            }
+
+            # remove null values
+            return {k: v for k, v in row.items() if v is not None}
+
+        def get_table_def(table):
+            meta = self.get_column_info(schema, table)
+            return {
+                'name': table,
+                'columns': [get_column_def(col) for col in meta]
+            }
 
         return {
             'database': self._params['database'],
             'schema': schema,
-            'tables': [
-                {
-                    'name': table,
-                    'columns': [
-                        {
-                            'column': col['column'],
-                            'radix': col['radix'],
-                            'scale': col['scale'],
-                            'size': col['size'],
-                            'type': self._rev_mappings[col['type']]['type'],
-                            'default': get_default(col['type'], col['default'])
-                        } for col in meta
-                    ]
-                }
-            ]
+            'tables': [get_table_def(table) for table in self.list_tables(table_filter)]
         }
 
     def create_table_statement(self, ddl, schema, table):
@@ -74,14 +82,13 @@ class Db(object):
             return self._mappings[col_type]['defaults'].get(value, "'" + value + "'")
 
         def column_def(entry):
-            # col_type, _, opt_format = self.__class__.DATA_TYPES_MAPPING[entry['data_type']]
             col_entry = self._mappings[entry['type']]
             col_type = col_entry['type']
             opt_format = col_entry.get('args', None)
-            type_option = '' if opt_format is None else '(' + opt_format.format(size=entry['size'],
-                                                                                scale=entry['scale']) + ')'
+            type_option = '' if opt_format is None else '(' + opt_format.format(size=entry.get('size'),
+                                                                                scale=entry.get('scale')) + ')'
             null_str = '' if ['nullable'] else ' NOT NULL'
-            default_option = '' if entry['default'] is None else ' DEFAULT ' + get_default(entry['type'], entry['default'])
+            default_option = '' if entry.get('default') is None else ' DEFAULT ' + get_default(entry['type'], entry['default'])
             return entry['column'] + ' ' \
                 + col_type \
                 + type_option \

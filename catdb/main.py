@@ -5,16 +5,12 @@ import sys
 from catdb.db import DbManager
 
 
-class Export(object):
-    pass
-
-
 def main():
 
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument('-d', '--database', help='database', required=True, action='store')
     parent_parser.add_argument('-s', '--schema', help='schema', required=False, action='store', default=None)
-    parent_parser.add_argument('-t', '--table', help='table', required=False, action='store')
+    parent_parser.add_argument('-t', '--table', help='table filter (using % as a wildcard)', required=False, action='store')
     parent_parser.add_argument('-dr', '--dry-run', dest='dry_run', help='dry run', required=False, action='store_true')
 
     argparser = argparse.ArgumentParser(description='export')

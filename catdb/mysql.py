@@ -20,12 +20,13 @@ class Mysql(Db):
         conn = self.__get_connection()
         try:
             with conn.cursor() as cursor:
-                cursor.execute('show tables')
+                query = "SHOW TABLES LIKE '{filter}'".format(filter='%' if filter is None else filter)
+                cursor.execute(query)
                 return [table.values()[0] for table in cursor.fetchall()]
         finally:
             conn.close()
 
-    def describe_table(self, schema, table):
+    def get_column_info(self, schema, table):
         def get_col_def(row):
             # DOUBLE(10,2)
             data_type_tokens = row['Type'].split('(')
@@ -40,7 +41,7 @@ class Mysql(Db):
             return {
                 'column': row['Field'],
                 'type': data_type,
-                'default': row['Default'].strip("''") if row['Default'] else None,
+                'default': row['Default'].strip("''").lower() if row['Default'] else None,
                 'nullable': row['Null'] == 'YES',
                 'size': size,
                 'radix': None,
@@ -50,7 +51,7 @@ class Mysql(Db):
         conn = self.__get_connection()
         try:
             with conn.cursor() as cursor:
-                cursor.execute('desc ' + table)
+                cursor.execute('DESC ' + table)
                 return [get_col_def(row) for row in cursor.fetchall()]
         finally:
             conn.close()
