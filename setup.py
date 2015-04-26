@@ -46,7 +46,7 @@ setup(
         'catdb',
     ],
     install_requires=[
-        'pyhocon==0.3.0',
+        'pyhocon==0.3.1',
         'psycopg2==2.6',
         'boto3==0.0.16',
         'PyMySQL==0.6.6'
@@ -60,5 +60,6 @@ setup(
     test_suite='tests',
     cmdclass={
         'test': PyTestCommand
-    }
+    },
+    package_data={'catdb': ['*.conf']}
 )

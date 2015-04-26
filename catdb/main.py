@@ -36,7 +36,7 @@ def main():
         print '\n'.join(db.list_tables(args.schema, args.table))
     elif args.subparser_name == 'ddl':
         if args.export_file:
-            ddl_str = json.dumps(db.describe_table(args.schema, args.table), sort_keys=True, indent=4, separators=(',', ': '))
+            ddl_str = json.dumps(db.get_ddl(args.schema, args.table), sort_keys=True, indent=4, separators=(',', ': '))
             if args.export_file == '-':
                 print ddl_str
             else:
@@ -49,7 +49,7 @@ def main():
                 with open(args.import_file, 'r') as fd:
                     ddl = json.loads(fd.read())
 
-            table_statement = db.create_table_statement(ddl, args.schema, args.table)
+            table_statement = db.create_database_statement(ddl, args.database, args.schema)
             if args.dry_run:
                 print table_statement
             else:

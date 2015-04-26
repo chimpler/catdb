@@ -1,6 +1,8 @@
 from abc import abstractmethod
 import csv
 import importlib
+import pkg_resources
+from pyhocon import ConfigFactory
 
 
 class Db(object):
@@ -10,15 +12,26 @@ class Db(object):
         'JSON', 'XML', 'CHAR', 'VARCHAR', 'LONGVARCHAR', 'DATE', 'TIME', 'TIMESTAMP', 'BINARY', 'VARBINARY', 'LONGVARBINARY', 'BLOB', 'CLOB'
     ]
 
-    def __init__(self, params={}):
+    def __init__(self, dbname, params={}):
         self._params = params
+        self._dbname = dbname
+        mappings = ConfigFactory().parse_file(pkg_resources.resource_filename(__name__, 'mappings.conf'))
+        self._mappings = {k: d[dbname] for k, d in mappings['mappings'].items()}
+        self._rev_mappings = {
+            d[dbname]['type']: {
+                'type': k,
+                'defaults': {
+                    dv: dk for dk, dv in d[dbname].get('defaults', {}).items()
+                }
+            } for k, d in mappings['mappings'].items()
+        }
 
     @abstractmethod
     def list_tables(self, schema=None, filter=None):
         pass
 
     @abstractmethod
-    def describe_table(self):
+    def describe_table(self, schema, table):
         pass
 
     @abstractmethod
@@ -29,14 +42,46 @@ class Db(object):
     def get_connection(self):
         pass
 
+    def get_ddl(self, schema=None, table=None):
+        # translate db specific ddl to generic ddl
+        meta = self.describe_table(schema, table)
+
+        def get_default(col_type, value):
+            return self._rev_mappings[col_type]['defaults'].get(value)
+
+        return {
+            'database': self._params['database'],
+            'schema': schema,
+            'tables': [
+                {
+                    'name': table,
+                    'columns': [
+                        {
+                            'column': col['column'],
+                            'radix': col['radix'],
+                            'scale': col['scale'],
+                            'size': col['size'],
+                            'type': self._rev_mappings[col['type']]['type'],
+                            'default': get_default(col['type'], col['default'])
+                        } for col in meta
+                    ]
+                }
+            ]
+        }
+
     def create_table_statement(self, ddl, schema, table):
+        def get_default(col_type, value):
+            return self._mappings[col_type]['defaults'].get(value, "'" + value + "'")
+
         def column_def(entry):
-            col_type, _, opt_format = self.__class__.DATA_TYPES_MAPPING[entry['data_type']]
+            # col_type, _, opt_format = self.__class__.DATA_TYPES_MAPPING[entry['data_type']]
+            col_entry = self._mappings[entry['type']]
+            col_type = col_entry['type']
+            opt_format = col_entry.get('args', None)
             type_option = '' if opt_format is None else '(' + opt_format.format(size=entry['size'],
                                                                                 scale=entry['scale']) + ')'
             null_str = '' if ['nullable'] else ' NOT NULL'
-            default_option = '' if entry['default'] is None else ' DEFAULT ' + (
-                "'" + entry['default'] + "'" if entry['data_type'] in Db.QUOTED_TYPES else entry['default'])
+            default_option = '' if entry['default'] is None else ' DEFAULT ' + get_default(entry['type'], entry['default'])
             return entry['column'] + ' ' \
                 + col_type \
                 + type_option \
@@ -49,6 +94,9 @@ class Db(object):
         return 'CREATE TABLE ' + schema_str + table + ' (\n    ' \
                + column_str \
                + '\n);'
+
+    def create_database_statement(self, ddl, database, schema):
+        return '\n'.join(self.create_table_statement(table, schema, table['name']) for table in ddl['tables'])
 
     def execute(self, query):
         conn = self.get_connection()

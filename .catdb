@@ -3,7 +3,6 @@
 	databases {
 	    pg_testdb: ${defaults.credentials} {
 			hostname: localhost
-			port: 5432
 			database: testdb
 			type: postgres
 	    }
@@ -12,14 +11,6 @@
 			database: testdb
 			type: mysql
 	    }
-	    dynamo: ${defaults.aws} {
-	        prefix:
-	    }
-	}
-
-	s3: ${defaults.aws} {
-        bucket:
-        prefix:
 	}
 
 	# default values to make things easier but not used directly by catdb

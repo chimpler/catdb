@@ -5,37 +5,8 @@ from catdb.db import Db
 class Mysql(Db):
     PUBLIC_SCHEMA = 'public'
 
-    # TODO 'DEFAULT CURRENT TIMESTAMP' SHOULD NOT BE QUOTED
-    # type, reverse mapping, opt_format, quoted
-    DATA_TYPES_MAPPING = {
-        'XML': ('TEXT', False, None),
-        'JSON': ('TEXT', False, None),
-        'BOOLEAN': ('BOOLEAN', True, None),
-        'BIT': ('BIT', True, '{size}'),
-        'VARBIT': ('BIT', False, '{size}'),
-        'TINYINT': ('TINYINT', True, None),
-        'SMALLINT': ('SMALLINT', True, None),
-        'INTEGER': ('INT', True, None),
-        'BIGINT': ('BIGINT', True, None),
-        'FLOAT': ('FLOAT', True, '{size},{scale}'),
-        'DOUBLE': ('DOUBLE', True, '{size},{scale}'),
-        'REAL': ('DOUBLE', False, '{size},{scale}'),
-        'NUMERIC': ('DECIMAL', True, '{size},{scale}'),
-        'DECIMAL': ('NUMERIC', False, '{size},{scale}'),
-        'CHAR': ('CHARACTER', True, '{size}'),
-        'VARCHAR': ('VARCHAR', True, '{size}'),
-        'LONGVARCHAR': ('VARCHAR', False, '{size}'),
-        'DATE': ('DATE', True, None),
-        'TIME': ('TIME', True, None),
-        'TIMESTAMP': ('TIMESTAMP', True, None),
-        'BINARY': ('BINARY', True, '{size}'),
-        'VARBINARY': ('VARBINARY', True, '{size}'),
-        'LONGVARBINARY': ('VARBINARY', False, None),
-        'BLOB': ('BLOB', True, None),
-        'CLOB': ('TEXT', True, None)
-    }
-
-    REV_DATA_TYPES_MAPPING = {d[0]: k for k, d in DATA_TYPES_MAPPING.items() if d[1]}
+    def __init__(self, params):
+        super(Mysql, self).__init__('mysql', params)
 
     def __get_connection(self):
         return pymysql.connect(host=self._params['hostname'],
@@ -58,7 +29,7 @@ class Mysql(Db):
         def get_col_def(row):
             # DOUBLE(10,2)
             data_type_tokens = row['Type'].split('(')
-            data_type = Mysql.REV_DATA_TYPES_MAPPING[data_type_tokens[0].upper()]
+            data_type = data_type_tokens[0].lower()
             size = None
             scale = None
             if len(data_type_tokens) > 1:
@@ -68,7 +39,7 @@ class Mysql(Db):
 
             return {
                 'column': row['Field'],
-                'data_type': data_type,
+                'type': data_type,
                 'default': row['Default'].strip("''") if row['Default'] else None,
                 'nullable': row['Null'] == 'YES',
                 'size': size,
@@ -80,11 +51,7 @@ class Mysql(Db):
         try:
             with conn.cursor() as cursor:
                 cursor.execute('desc ' + table)
-                return {
-                    'schema': schema,
-                    'table': table,
-                    'columns': [get_col_def(row) for row in cursor.fetchall()]
-                }
+                return [get_col_def(row) for row in cursor.fetchall()]
         finally:
             conn.close()
 
