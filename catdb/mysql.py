@@ -41,7 +41,7 @@ class Mysql(Db):
             return {
                 'column': row['Field'],
                 'type': data_type,
-                'default': row['Default'].strip("''").lower() if row['Default'] else None,
+                'default': row['Default'].strip("'").lower() if row['Default'] else None,
                 'nullable': row['Null'] == 'YES',
                 'size': size,
                 'radix': None,

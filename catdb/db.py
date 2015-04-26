@@ -81,12 +81,14 @@ class Db(object):
         def get_default(col_type, value):
             return self._mappings[col_type]['defaults'].get(value, "'" + value + "'")
 
+        def format_args(args, entry):
+            return ','.join(str(entry[arg]) for arg in args if entry.get(arg))
+
         def column_def(entry):
             col_entry = self._mappings[entry['type']]
             col_type = col_entry['type']
-            opt_format = col_entry.get('args', None)
-            type_option = '' if opt_format is None else '(' + opt_format.format(size=entry.get('size'),
-                                                                                scale=entry.get('scale')) + ')'
+            args = col_entry.get('args', None)
+            type_option = '' if args is None else '(' + format_args(args, entry) + ')'
             null_str = '' if ['nullable'] else ' NOT NULL'
             default_option = '' if entry.get('default') is None else ' DEFAULT ' + get_default(entry['type'], entry['default'])
             return entry['column'] + ' ' \
