@@ -73,13 +73,12 @@ class Postgres(Db):
                         table_name=table
                     ))
 
-                first = True
                 yield [desc[0] for desc in cursor.description]
-                while first or rows:
+                rows = cursor.fetchmany()
+                while rows:
                     rows = cursor.fetchmany()
                     for row in rows:
                         yield row
-                    first = False
 
     def get_connection(self):
         conn = psycopg2.connect(self.__get_connect_params())

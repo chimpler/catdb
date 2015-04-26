@@ -61,14 +61,14 @@ class Mysql(Db):
         try:
             with conn.cursor() as cursor:
                 cursor.execute('SELECT * FROM ' + table)
-                first = True
                 fields = [desc[0] for desc in cursor.description]
                 yield fields
-                while first or rows:
-                    rows = cursor.fetchmany()
+
+                rows = cursor.fetchmany()
+                while rows:
                     for row in rows:
                         yield [row[f] for f in fields]
-                    first = False
+                    rows = cursor.fetchmany()
         finally:
             conn.close()
 
