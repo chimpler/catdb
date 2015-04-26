@@ -8,21 +8,27 @@ class Mysql(Db):
     def __init__(self, params):
         super(Mysql, self).__init__('mysql', params)
 
-    def __get_connection(self):
+    def get_connection(self, is_dict_cursor=True):
+        cursor_class = pymysql.cursors.DictCursor if is_dict_cursor else pymysql.cursors.SSCursor
         return pymysql.connect(host=self._params['hostname'],
                                user=self._params['username'],
                                passwd=self._params['password'],
                                db=self._params['database'],
                                charset='utf8mb4',
-                               cursorclass=pymysql.cursors.DictCursor)
+                               cursorclass=cursor_class)
 
     def list_tables(self, schema=None, filter=None):
-        conn = self.__get_connection()
+        with self.get_connection(False) as cursor:
+            query = "SHOW TABLES LIKE '{filter}'".format(filter='%' if filter is None else filter)
+            cursor.execute(query)
+            return [table[0] for table in cursor.fetchall()]
+
+        conn = self.get_connection(False)
         try:
             with conn.cursor() as cursor:
                 query = "SHOW TABLES LIKE '{filter}'".format(filter='%' if filter is None else filter)
                 cursor.execute(query)
-                return [table.values()[0] for table in cursor.fetchall()]
+                return [table[0] for table in cursor.fetchall()]
         finally:
             conn.close()
 
@@ -48,49 +54,10 @@ class Mysql(Db):
                 'scale': scale
             }
 
-        conn = self.__get_connection()
+        conn = self.get_connection()
         try:
             with conn.cursor() as cursor:
                 cursor.execute('DESC ' + table)
                 return [get_col_def(row) for row in cursor.fetchall()]
         finally:
             conn.close()
-
-    def export_data(self, schema=None, table=None):
-        conn = self.__get_connection()
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT * FROM ' + table)
-                fields = [desc[0] for desc in cursor.description]
-                yield fields
-
-                rows = cursor.fetchmany()
-                while rows:
-                    for row in rows:
-                        yield [row[f] for f in fields]
-                    rows = cursor.fetchmany()
-        finally:
-            conn.close()
-
-    def get_connection(self):
-
-        conn = self.__get_connection()
-        return Connection(conn)
-
-
-class Connection(object):
-    def __init__(self, conn):
-        self._conn = conn
-
-    def execute(self, query):
-        with self._conn.cursor() as cursor:
-            cursor.execute(query)
-
-    def commit(self):
-        self._conn.commit()
-
-    def rollback(self):
-        self._conn.rollback()
-
-    def close(self):
-        self._conn.close()

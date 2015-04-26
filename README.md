@@ -2,6 +2,7 @@
 
 # CatDB
 
+[![Build Status](https://travis-ci.org/chimpler/catdb.svg)](https://travis-ci.org/chimpler/catdb)
 [![Codacy Badge](https://www.codacy.com/project/badge/9475572095844dc7832e36444cc71b78)](https://www.codacy.com/app/francois-dangngoc/catdb)
 [![Join the chat at https://gitter.im/chimpler/catdb](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/chimpler/catdb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 

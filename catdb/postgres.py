@@ -21,6 +21,9 @@ class Postgres(Db):
             'password': self._params.get('password', None)
         }
 
+    def get_connection(self):
+        return psycopg2.connect(**self.__get_connect_params())
+
     def list_tables(self, schema=None, filter=None):
         with psycopg2.connect(**self.__get_connect_params()) as conn:
             with conn.cursor() as cursor:
@@ -63,41 +66,3 @@ class Postgres(Db):
                     column, data_type, default_value, nullable, length, numeric_precision, numeric_precision_radix, numeric_scale
                     in cursor.fetchall()
                 ]
-
-    def export_data(self, schema=None, table=None):
-        with psycopg2.connect(**self.__get_connect_params()) as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    "SELECT * FROM {schema}.{table_name}".format(
-                        schema=Postgres.PUBLIC_SCHEMA if schema is None else schema,
-                        table_name=table
-                    ))
-
-                yield [desc[0] for desc in cursor.description]
-                rows = cursor.fetchmany()
-                while rows:
-                    rows = cursor.fetchmany()
-                    for row in rows:
-                        yield row
-
-    def get_connection(self):
-        conn = psycopg2.connect(self.__get_connect_params())
-        return Connection(conn)
-
-
-class Connection(object):
-    def __init__(self, conn):
-        self._conn = conn
-
-    def execute(self, query):
-        with self._conn.cursor() as cursor:
-            cursor.execute(query)
-
-    def commit(self):
-        self._conn.commit()
-
-    def rollback(self):
-        self._conn.rollback()
-
-    def close(self):
-        self._conn.close()

@@ -119,11 +119,6 @@ class Db(object):
 
         conn.close()
 
-    def export_to_file(self, fd, schema=None, table=None):
-        writer = csv.writer(fd, delimiter='|', quotechar="'", quoting=csv.QUOTE_MINIMAL)
-        for row in self.export_data(schema, table):
-            writer.writerow(row)
-
     def import_from_file(self, fd, schema=None, table=None, dry_run=False):
         conn = self.get_connection()
         reader = csv.reader(fd, delimiter='|', quotechar="'", quoting=csv.QUOTE_MINIMAL)
@@ -150,6 +145,27 @@ class Db(object):
 
         if len(buffer) > 0:
             insert_all(buffer)
+
+    def export_data(self, schema=None, table=None):
+        conn = self.get_connection(False)
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM ' + table)
+            fields = [desc[0] for desc in cursor.description]
+            yield fields
+
+            rows = cursor.fetchmany()
+            while rows:
+                for row in rows:
+                    yield row
+                rows = cursor.fetchmany()
+        finally:
+            conn.close()
+
+    def export_to_file(self, fd, schema=None, table=None):
+        writer = csv.writer(fd, delimiter='|', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+        for row in self.export_data(schema, table):
+            writer.writerow(row)
 
 
 class DbManager:
