@@ -8,10 +8,6 @@ from pyhocon import ConfigFactory
 class Db(object):
     ROW_BUFFER_SIZE = 1000
 
-    QUOTED_TYPES = [
-        'JSON', 'XML', 'CHAR', 'VARCHAR', 'LONGVARCHAR', 'DATE', 'TIME', 'TIMESTAMP', 'BINARY', 'VARBINARY', 'LONGVARBINARY', 'BLOB', 'CLOB'
-    ]
-
     def __init__(self, dbname, params={}):
         self._params = params
         self._dbname = dbname
@@ -39,11 +35,7 @@ class Db(object):
         pass
 
     @abstractmethod
-    def export_data(self, schema=None, table=None):
-        pass
-
-    @abstractmethod
-    def get_connection(self):
+    def get_connection(self, use_dict_cursor=True):
         pass
 
     def get_ddl(self, schema=None, table_filter=None):
@@ -146,26 +138,25 @@ class Db(object):
         if len(buffer) > 0:
             insert_all(buffer)
 
-    def export_data(self, schema=None, table=None):
+    def export_to_file(self, fd, schema=None, table=None):
+        writer = csv.writer(fd, delimiter='|', quotechar="'", quoting=csv.QUOTE_MINIMAL)
         conn = self.get_connection(False)
         try:
             cursor = conn.cursor()
-            cursor.execute('SELECT * FROM ' + table)
+            actual_table = ('' if schema is None else schema + '.') + table
+            cursor.execute('SELECT * FROM ' + actual_table)
+
+            # write header
             fields = [desc[0] for desc in cursor.description]
-            yield fields
+            writer.writerow(fields)
 
             rows = cursor.fetchmany()
             while rows:
                 for row in rows:
-                    yield row
+                    writer.writerow(row)
                 rows = cursor.fetchmany()
         finally:
             conn.close()
-
-    def export_to_file(self, fd, schema=None, table=None):
-        writer = csv.writer(fd, delimiter='|', quotechar="'", quoting=csv.QUOTE_MINIMAL)
-        for row in self.export_data(schema, table):
-            writer.writerow(row)
 
 
 class DbManager:
