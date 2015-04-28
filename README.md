@@ -89,23 +89,24 @@ Options:
 - table: table that will receive the data
 - file: file to import the data from. If `-` is used, standard input is used
 
-#### Example
+### Example
 
-Create a table in Mysql:
+**Create a table in Mysql and populate it**
 
-    CREATE TABLE employee(
+    mysql> CREATE TABLE employee(
         id INT NOT NULL,
         name VARCHAR(20) DEFAULT '(no name)' NOT NULL, 
         dept CHAR(2), 
         age INT, 
         height DOUBLE(2,1)
     );
+    
+    mysql> INSERT INTO employee VALUES (1, 'John Doe', 'IT', 28, 6.3),(1, 'Mary Gray', 'IT', 30, 6.8);
 
-Export the DDL definition:
+**Export the DDL definition**
     
     $ catdb ddl -d my_testdb -t employee -e /tmp/employee.json
     $ cat /tmp/employee.json
-   
     {
         "database": "testdb",
         "schema": null,
@@ -150,7 +151,7 @@ Export the DDL definition:
         ]
     }
     
-Convert DDL definition to CREATE TABLE statement for Postgres:
+**Convert DDL definition to CREATE TABLE statement for Postgres**
 
     $ catdb ddl -d pg_testdb -t employee -i /tmp/employee.json -dr
     
@@ -161,6 +162,21 @@ Convert DDL definition to CREATE TABLE statement for Postgres:
         age integer,
         height real
     );
+
+**Export data**
+
+    $ catdb data -d my_testdb -t employee -e /tmp/export.csv
+    $ cat /tmp/export.csv
+    id|name|dept|age|height
+    1|John Doe|IT|28|6.3
+    1|Mary Gray|IT|30|6.8
+        
+**Import data (dry-run)**
+
+    $ catdb data -d pg_testdb -t employee -i /tmp/export.csv -dr
+    INSERT INTO employee (id,name,dept,age,height)
+    VALUES('1','John Doe','IT','28','6.3'),
+    ('1','Mary Gray','IT','30','6.8');    
 
 ### TODO
 
