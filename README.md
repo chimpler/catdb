@@ -1,5 +1,3 @@
-**UNDER HEAVY CONSTRUCTION DO NOT USE**
-
 # CatDB
 
 [![Build Status](https://travis-ci.org/chimpler/catdb.svg)](https://travis-ci.org/chimpler/catdb)
@@ -82,13 +80,86 @@ Options:
 
 #### Import data
 
-	catdb data -d <database> -t <table> -i <file or ->
+	catdb data -d <database> -t <table> -i <file>
 
 Options:
 
 - database: database alias set in .catdb
 - table: table that will receive the data
 - file: file to import the data from. If `-` is used, standard input is used
+
+#### Example
+
+Create a table in Mysql:
+
+    CREATE TABLE employee(
+        id INT NOT NULL,
+        name VARCHAR(20) DEFAULT '(no name)' NOT NULL, 
+        dept CHAR(2), 
+        age INT, 
+        height DOUBLE(2,1)L
+    );
+
+Export the DDL definition:
+    
+    $ catdb ddl -d my_testdb -t employee -e /tmp/employee.json
+    $ cat /tmp/employee.json
+   
+    {
+        "database": "testdb",
+        "schema": null,
+        "tables": [
+            {
+                "columns": [
+                    {
+                        "column": "id",
+                        "nullable": false,
+                        "size": 11,
+                        "type": "integer"
+                    },
+                    {
+                        "column": "name",
+                        "default": "(no name)",
+                        "nullable": false,
+                        "size": 20,
+                        "type": "varchar"
+                    },
+                    {
+                        "column": "dept",
+                        "nullable": true,
+                        "size": 2,
+                        "type": "char"
+                    },
+                    {
+                        "column": "age",
+                        "nullable": true,
+                        "size": 11,
+                        "type": "integer"
+                    },
+                    {
+                        "column": "height",
+                        "nullable": true,
+                        "scale": 1,
+                        "size": 2,
+                        "type": "real"
+                    }
+                ],
+                "name": "employee"
+            }
+        ]
+    }
+    
+Convert DDL definition to CREATE TABLE statement for Postgres:
+
+    $ catdb ddl -d pg_testdb -t employee -i /tmp/employee.json -dr
+    
+    CREATE TABLE employee (
+        id integer,
+        name character varying(20) DEFAULT '(no name)',
+        dept character(2),
+        age integer,
+        height real
+    );
 
 ### TODO
 

@@ -27,7 +27,7 @@ class Db(object):
         }
 
     @abstractmethod
-    def list_tables(self, schema=None, filter=None):
+    def list_tables(self, schema=None, table_filter=None):
         pass
 
     @abstractmethod
@@ -41,11 +41,12 @@ class Db(object):
     def get_ddl(self, schema=None, table_filter=None):
         """translate db specific ddl to generic ddl"""
         def get_default(col_type, value):
-            return self._rev_mappings[col_type]['defaults'].get(value)
+            return self._rev_mappings[col_type]['defaults'].get(value, value)
 
         def get_column_def(entry):
             row = {
                 'column': entry['column'],
+                'nullable': entry['nullable'],
                 'radix': entry['radix'],
                 'scale': entry['scale'],
                 'size': entry['size'],
@@ -66,12 +67,13 @@ class Db(object):
         return {
             'database': self._params['database'],
             'schema': schema,
-            'tables': [get_table_def(table) for table in self.list_tables(table_filter)]
+            'tables': [get_table_def(table) for table in self.list_tables(schema, table_filter)]
         }
 
     def create_table_statement(self, ddl, schema, table):
         def get_default(col_type, value):
-            return self._mappings[col_type]['defaults'].get(value, "'" + value + "'")
+            defaults = self._mappings[col_type].get('defaults', None)
+            return "'%s'" % value if defaults is None else defaults.get(value, "'%s'" % value)
 
         def format_args(args, entry):
             return ','.join(str(entry[arg]) for arg in args if entry.get(arg))
@@ -162,8 +164,7 @@ class Db(object):
 class DbManager:
     @staticmethod
     def get_db(name, params):
-        module = importlib.import_module(
-            'catdb.{implementation}'.format(implementation=name))
+        module = importlib.import_module('catdb.{implementation}'.format(implementation=name))
         class_name = name.capitalize()
         clazz = getattr(module, class_name)
         return clazz(params)

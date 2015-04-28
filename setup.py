@@ -51,7 +51,10 @@ setup(
         'boto3==0.0.16',
         'PyMySQL==0.6.6'
     ],
-    tests_require=['pytest'],
+    tests_require=[
+        'pytest',
+        'mock'
+    ],
     entry_points={
         'console_scripts': [
             'catdb=catdb.main:main'

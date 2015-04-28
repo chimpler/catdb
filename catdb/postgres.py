@@ -21,8 +21,14 @@ class Postgres(Db):
             'password': self._params.get('password', None)
         }
 
-    def get_connection(self):
-        return psycopg2.connect(**self.__get_connect_params())
+    def get_connection(self, use_dict_cursor=False, db=None):
+        params = {}
+        params.update(self.__get_connect_params())
+        if use_dict_cursor:
+            params.update({
+                'cursor_factory': 'psycopg2.extras.RealDictCursor'
+            })
+        return psycopg2.connect(**params)
 
     def list_tables(self, schema=None, filter=None):
         with psycopg2.connect(**self.__get_connect_params()) as conn:
@@ -34,6 +40,8 @@ class Postgres(Db):
                     ))
                 return [table[0] for table in cursor.fetchall()]
 
+    # http://stackoverflow.com/questions/2204058/list-columns-with-indexes-in-postgresql
+    # http://www.alberton.info/postgresql_meta_info.html#.VT2sIhPF-d4
     def get_column_info(self, schema, table):
         with psycopg2.connect(**self.__get_connect_params()) as conn:
             with conn.cursor() as cursor:
