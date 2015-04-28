@@ -124,7 +124,7 @@ class Db(object):
                     + ',\n'.join('(' + ','.join("'" + f + "'" for f in row) + ')' for row in rows) + ';'
 
             if dry_run:
-                print query
+                print(query)
             else:
                 conn.execute(query)
 
