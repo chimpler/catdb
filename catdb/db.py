@@ -14,17 +14,15 @@ class Db(object):
         mappings = ConfigFactory().parse_file(pkg_resources.resource_filename(__name__, 'mappings.conf'))
 
         # mapping coltype => {mapping} instead of coltype => db => {mapping}
-        self._mappings = {k: d[dbname] for k, d in mappings['mappings'].items()}
+        # dict() list comprehension compatible with Python 2.6 (does not support {k:v for ...})
+        self._mappings = dict((k, d[dbname]) for k, d in mappings['mappings'].items())
 
         # reverse mapping
-        self._rev_mappings = {
-            d[dbname]['type']: {
+        self._rev_mappings = dict((d[dbname]['type'], {
                 'type': k,
-                'defaults': {
-                    dv: dk for dk, dv in d[dbname].get('defaults', {}).items()
-                }
-            } for k, d in mappings['mappings'].items()
-        }
+                'defaults': dict((dv, dk) for dk, dv in d[dbname].get('defaults', {}).items())
+            }) for k, d in mappings['mappings'].items()
+        )
 
     @abstractmethod
     def list_tables(self, schema=None, table_filter=None):
@@ -55,7 +53,7 @@ class Db(object):
             }
 
             # remove null values
-            return {k: v for k, v in row.items() if v is not None}
+            return dict((k, v) for k, v in row.items() if v is not None)
 
         def get_table_def(table):
             meta = self.get_column_info(schema, table)

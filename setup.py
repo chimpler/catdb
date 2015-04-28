@@ -50,7 +50,7 @@ setup(
         'psycopg2==2.6',
         'boto3==0.0.16',
         'PyMySQL==0.6.6'
-    ],
+    ] + ['importlib==1.0.3'] if sys.version_info[:2] == (2, 6) else [],
     tests_require=[
         'pytest',
         'mock'
