@@ -1,5 +1,7 @@
 # CatDB
 
+[![pypi](http://img.shields.io/pypi/v/catdb.png)](https://pypi.python.org/pypi/catdb)
+[![pypi downloads](http://img.shields.io/pypi/dm/catdb.png)](https://pypi.python.org/pypi/catdb)
 [![Build Status](https://travis-ci.org/chimpler/catdb.svg)](https://travis-ci.org/chimpler/catdb)
 [![Codacy Badge](https://www.codacy.com/project/badge/9475572095844dc7832e36444cc71b78)](https://www.codacy.com/app/francois-dangngoc/catdb)
 [![Coverage Status](https://coveralls.io/repos/chimpler/catdb/badge.svg)](https://coveralls.io/r/chimpler/catdb)
@@ -94,87 +96,87 @@ Options:
 **Create a table in Mysql and populate it**
 
 ```sql
-    mysql> CREATE TABLE employee(
-        id INT NOT NULL,
-        name VARCHAR(20) DEFAULT '(no name)' NOT NULL, 
-        dept CHAR(2), 
-        age INT, 
-        height DOUBLE(2,1),
-        created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    
-    mysql> INSERT INTO employee(id, name, dept, age, height) VALUES (1, 'John Doe', 'IT', 28, 6.3),(1, 'Mary Gray', 'IT', 30, 6.8);
+mysql> CREATE TABLE employee(
+    id INT NOT NULL,
+    name VARCHAR(20) DEFAULT '(no name)' NOT NULL, 
+    dept CHAR(2), 
+    age INT, 
+    height DOUBLE(2,1),
+    created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+mysql> INSERT INTO employee(id, name, dept, age, height) VALUES (1, 'John Doe', 'IT', 28, 6.3),(1, 'Mary Gray', 'IT', 30, 6.8);
 ```
 
 **Export the DDL definition**
     
 ```json
-    $ catdb ddl -d my_testdb -t employee -e /tmp/employee.json
-    $ cat /tmp/employee.json
-    {
-        "database": "testdb",
-        "schema": null,
-        "tables": [
-            {
-                "columns": [
-                    {
-                        "column": "id",
-                        "nullable": false,
-                        "size": 11,
-                        "type": "integer"
-                    },
-                    {
-                        "column": "name",
-                        "default": "(no name)",
-                        "nullable": false,
-                        "size": 20,
-                        "type": "varchar"
-                    },
-                    {
-                        "column": "dept",
-                        "nullable": true,
-                        "size": 2,
-                        "type": "char"
-                    },
-                    {
-                        "column": "age",
-                        "nullable": true,
-                        "size": 11,
-                        "type": "integer"
-                    },
-                    {
-                        "column": "height",
-                        "nullable": true,
-                        "scale": 1,
-                        "size": 2,
-                        "type": "real"
-                    },
-                    {
-                        "column": "created_on",
-                        "default": "current_timestamp",
-                        "nullable": false,
-                        "type": "timestamp"
-                    }
-                ],
-                "name": "employee"
-            }
-        ]
-    }
+$ catdb ddl -d my_testdb -t employee -e /tmp/employee.json
+$ cat /tmp/employee.json
+{
+    "database": "testdb",
+    "schema": null,
+    "tables": [
+        {
+            "columns": [
+                {
+                    "column": "id",
+                    "nullable": false,
+                    "size": 11,
+                    "type": "integer"
+                },
+                {
+                    "column": "name",
+                    "default": "(no name)",
+                    "nullable": false,
+                    "size": 20,
+                    "type": "varchar"
+                },
+                {
+                    "column": "dept",
+                    "nullable": true,
+                    "size": 2,
+                    "type": "char"
+                },
+                {
+                    "column": "age",
+                    "nullable": true,
+                    "size": 11,
+                    "type": "integer"
+                },
+                {
+                    "column": "height",
+                    "nullable": true,
+                    "scale": 1,
+                    "size": 2,
+                    "type": "real"
+                },
+                {
+                    "column": "created_on",
+                    "default": "current_timestamp",
+                    "nullable": false,
+                    "type": "timestamp"
+                }
+            ],
+            "name": "employee"
+        }
+    ]
+}
 ```
     
 **Convert DDL definition to CREATE TABLE statement for Postgres**
 
 ```sql
-    $ catdb ddl -d pg_testdb -t employee -i /tmp/employee.json -dr
-    
-    CREATE TABLE employee (
-        id integer,
-        name character varying(20) DEFAULT '(no name)',
-        dept character(2),
-        age integer,
-        height real,
-        created_on timestamp without time zone DEFAULT now()
-    );
+$ catdb ddl -d pg_testdb -t employee -i /tmp/employee.json -dr
+
+CREATE TABLE employee (
+    id integer,
+    name character varying(20) DEFAULT '(no name)',
+    dept character(2),
+    age integer,
+    height real,
+    created_on timestamp without time zone DEFAULT now()
+);
 ```
     
 **Export data**
@@ -188,10 +190,10 @@ Options:
 **Import data (dry-run)**
 
 ```sql
-    $ catdb data -d pg_testdb -t employee -i /tmp/export.csv -dr
-    INSERT INTO employee (id,name,dept,age,height,created_on)
-    VALUES('1','John Doe','IT','28','6.3','2015-04-28 22:17:57'),
-    ('1','Mary Gray','IT','30','6.8','2015-04-28 22:17:57');
+$ catdb data -d pg_testdb -t employee -i /tmp/export.csv -dr
+INSERT INTO employee (id,name,dept,age,height,created_on)
+VALUES('1','John Doe','IT','28','6.3','2015-04-28 22:17:57'),
+('1','Mary Gray','IT','30','6.8','2015-04-28 22:17:57');
 ```
 
 ### TODO
