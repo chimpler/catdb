@@ -45,10 +45,6 @@ class Mysql(Db):
                 'scale': scale
             }
 
-        conn = self.get_connection()
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute('DESC ' + table)
-                return [get_col_def(row) for row in cursor.fetchall()]
-        finally:
-            conn.close()
+        with self.get_connection(False) as cursor:
+            cursor.execute('DESC ' + table)
+            return [get_col_def(row) for row in cursor.fetchall()]

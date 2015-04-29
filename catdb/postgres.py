@@ -5,10 +5,6 @@ from catdb.db import Db
 class Postgres(Db):
     PUBLIC_SCHEMA = 'public'
 
-    DEFAULT_VALUE_MAPPING = {
-        'CURRENT_TIMESTAMP': 'NOW()'
-    }
-
     def __init__(self, params):
         super(Postgres, self).__init__('postgres', params)
 

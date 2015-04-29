@@ -206,8 +206,8 @@ Data export                            | :white_check_mark:
 Data import                            | :white_check_mark:
 Constraints export                     | :x:
 Constraints import                     | :x:
-Postgres                               | :x:
-MySQL                                  | :x:
+Postgres                               | :white_check_mark:
+MySQL                                  | :white_check_mark:
 Oracle                                 | :x:
 Vertica                                | :x:
 SQLite                                 | :x:

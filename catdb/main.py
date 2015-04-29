@@ -3,7 +3,6 @@ import json
 import os
 from pyhocon import ConfigFactory
 import sys
-from catdb import CatDbException
 from catdb.db import DbManager
 
 
