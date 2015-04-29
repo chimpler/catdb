@@ -1,7 +1,9 @@
 import argparse
 import json
+import os
 from pyhocon import ConfigFactory
 import sys
+from catdb import CatDbException
 from catdb.db import DbManager
 
 
@@ -24,7 +26,13 @@ def main():
     subparsers.add_parser('list', help='list', parents=[parent_parser])
 
     args = argparser.parse_args()
-    config = ConfigFactory.parse_file('.catdb')
+    home_dir = os.environ['HOME']
+    config_path = os.path.join(home_dir, '.catdb')
+    if not os.path.exists(config_path):
+        sys.stderr.write('File {config_path} not found. Go to https://github.com/chimpler/catdb for more details\n'.format(config_path=config_path))
+        sys.exit(1)
+
+    config = ConfigFactory.parse_file(config_path)
     db_config = config['databases.' + args.database]
 
     db = DbManager.get_db(db_config['type'], db_config)

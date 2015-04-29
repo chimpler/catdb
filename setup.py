@@ -23,7 +23,7 @@ class PyTestCommand(TestCommand):
 
 setup(
     name='catdb',
-    version='0.0.1',
+    version='0.0.2',
     description='Utility to copy data from various databases',
     long_description='Utility to import, export and copy data from various databases',
     keywords='catdb',
