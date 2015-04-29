@@ -98,13 +98,15 @@ Options:
         name VARCHAR(20) DEFAULT '(no name)' NOT NULL, 
         dept CHAR(2), 
         age INT, 
-        height DOUBLE(2,1)
+        height DOUBLE(2,1),
+        created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     
-    mysql> INSERT INTO employee VALUES (1, 'John Doe', 'IT', 28, 6.3),(1, 'Mary Gray', 'IT', 30, 6.8);
+    mysql> INSERT INTO employee(id, name, dept, age, height) VALUES (1, 'John Doe', 'IT', 28, 6.3),(1, 'Mary Gray', 'IT', 30, 6.8);
 
 **Export the DDL definition**
     
+    ```json
     $ catdb ddl -d my_testdb -t employee -e /tmp/employee.json
     $ cat /tmp/employee.json
     {
@@ -144,12 +146,19 @@ Options:
                         "scale": 1,
                         "size": 2,
                         "type": "real"
+                    },
+                    {
+                        "column": "created_on",
+                        "default": "current_timestamp",
+                        "nullable": false,
+                        "type": "timestamp"
                     }
                 ],
                 "name": "employee"
             }
         ]
     }
+    ```
     
 **Convert DDL definition to CREATE TABLE statement for Postgres**
 
@@ -160,23 +169,24 @@ Options:
         name character varying(20) DEFAULT '(no name)',
         dept character(2),
         age integer,
-        height real
+        height real,
+        created_on timestamp without time zone DEFAULT now()
     );
-
+    
 **Export data**
 
     $ catdb data -d my_testdb -t employee -e /tmp/export.csv
     $ cat /tmp/export.csv
-    id|name|dept|age|height
-    1|John Doe|IT|28|6.3
-    1|Mary Gray|IT|30|6.8
-        
+    id|name|dept|age|height|created_on
+    1|John Doe|IT|28|6.3|2015-04-28 22:17:57
+    1|Mary Gray|IT|30|6.8|2015-04-28 22:17:57        
+
 **Import data (dry-run)**
 
     $ catdb data -d pg_testdb -t employee -i /tmp/export.csv -dr
-    INSERT INTO employee (id,name,dept,age,height)
-    VALUES('1','John Doe','IT','28','6.3'),
-    ('1','Mary Gray','IT','30','6.8');    
+    INSERT INTO employee (id,name,dept,age,height,created_on)
+    VALUES('1','John Doe','IT','28','6.3','2015-04-28 22:17:57'),
+    ('1','Mary Gray','IT','30','6.8','2015-04-28 22:17:57');
 
 ### TODO
 
@@ -201,4 +211,5 @@ Elastic Search                         | :x:
 MongoDB                                | :x:
 Export to S3                           | :x:
 Import from S3                         | :x:
+Compatible with Turbine XML format     | :x:
 Common console                         | :x:

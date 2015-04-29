@@ -1,0 +1,2 @@
+class CatDbException(Exception):
+    pass

@@ -3,6 +3,7 @@ import csv
 import importlib
 import pkg_resources
 from pyhocon import ConfigFactory
+from catdb import CatDbException
 
 
 class Db(object):
@@ -41,6 +42,14 @@ class Db(object):
         def get_default(col_type, value):
             return self._rev_mappings[col_type]['defaults'].get(value, value)
 
+        def get_rev_mapping(col_type):
+            rev_mapping = self._rev_mappings.get(col_type)
+            if rev_mapping is None:
+                raise CatDbException('Cannot find reverse mapping {col_type}. ' \
+                                     'Please submit an issue at https://github.com/chimpler/catdb/issues.'.format(col_type=col_type))
+            else:
+                return rev_mapping
+
         def get_column_def(entry):
             row = {
                 'column': entry['column'],
@@ -48,7 +57,7 @@ class Db(object):
                 'radix': entry['radix'],
                 'scale': entry['scale'],
                 'size': entry['size'],
-                'type': self._rev_mappings[entry['type']]['type'],
+                'type': get_rev_mapping(entry['type'])['type'],
                 'default': get_default(entry['type'], entry['default'])
             }
 

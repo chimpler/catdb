@@ -21,7 +21,7 @@ def main():
     data_parser = subparsers.add_parser('data', help='data', parents=[parent_parser])
     data_parser.add_argument('-e', '--export', dest='export_file', help='export', required=False, action='store')
     data_parser.add_argument('-i', '--import', dest='import_file', help='import', required=False)
-    list_parser = subparsers.add_parser('list', help='list', parents=[parent_parser])
+    subparsers.add_parser('list', help='list', parents=[parent_parser])
 
     args = argparser.parse_args()
     config = ConfigFactory.parse_file('.catdb')
