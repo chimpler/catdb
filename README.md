@@ -93,6 +93,7 @@ Options:
 
 **Create a table in Mysql and populate it**
 
+```sql
     mysql> CREATE TABLE employee(
         id INT NOT NULL,
         name VARCHAR(20) DEFAULT '(no name)' NOT NULL, 
@@ -103,6 +104,7 @@ Options:
     );
     
     mysql> INSERT INTO employee(id, name, dept, age, height) VALUES (1, 'John Doe', 'IT', 28, 6.3),(1, 'Mary Gray', 'IT', 30, 6.8);
+```
 
 **Export the DDL definition**
     
@@ -162,6 +164,7 @@ Options:
     
 **Convert DDL definition to CREATE TABLE statement for Postgres**
 
+```sql
     $ catdb ddl -d pg_testdb -t employee -i /tmp/employee.json -dr
     
     CREATE TABLE employee (
@@ -172,6 +175,7 @@ Options:
         height real,
         created_on timestamp without time zone DEFAULT now()
     );
+```
     
 **Export data**
 
@@ -183,10 +187,12 @@ Options:
 
 **Import data (dry-run)**
 
+```sql
     $ catdb data -d pg_testdb -t employee -i /tmp/export.csv -dr
     INSERT INTO employee (id,name,dept,age,height,created_on)
     VALUES('1','John Doe','IT','28','6.3','2015-04-28 22:17:57'),
     ('1','Mary Gray','IT','30','6.8','2015-04-28 22:17:57');
+```
 
 ### TODO
 
