@@ -106,7 +106,7 @@ Options:
 
 **Export the DDL definition**
     
-    ```json
+```json
     $ catdb ddl -d my_testdb -t employee -e /tmp/employee.json
     $ cat /tmp/employee.json
     {
@@ -158,7 +158,7 @@ Options:
             }
         ]
     }
-    ```
+```
     
 **Convert DDL definition to CREATE TABLE statement for Postgres**
 

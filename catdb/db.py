@@ -45,7 +45,7 @@ class Db(object):
         def get_rev_mapping(col_type):
             rev_mapping = self._rev_mappings.get(col_type)
             if rev_mapping is None:
-                raise CatDbException('Cannot find reverse mapping {col_type}. ' \
+                raise CatDbException('Cannot find reverse mapping {col_type}. '
                                      'Please submit an issue at https://github.com/chimpler/catdb/issues.'.format(col_type=col_type))
             else:
                 return rev_mapping
