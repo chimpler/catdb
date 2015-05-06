@@ -38,7 +38,7 @@ class TestMysql(object):
             'database': 'test'
         })
 
-        assert mysql.get_column_info(None, 'test') == [
+        assert mysql.get_column_info('test', None) == [
             {
                 'column': 'field',
                 'type': 'varchar',

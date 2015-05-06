@@ -43,7 +43,7 @@ class TestPosgres(object):
             'database': 'test'
         })
 
-        assert postgres.get_column_info(None, 'test') == [
+        assert postgres.get_column_info('test', None) == [
             {
                 'column': 'field',
                 'type': 'character varying',

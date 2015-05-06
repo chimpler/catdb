@@ -18,13 +18,16 @@ class Mysql(Db):
                                charset='utf8mb4',
                                cursorclass=cursor_class)
 
-    def list_tables(self, schema=None, table_filter=None):
+    def get_cursor(self, connection):
+        return connection.cursor()
+
+    def list_tables(self, table_filter=None, schema=None):
         with self.get_connection(False) as cursor:
             query = "SHOW TABLES LIKE '{filter}'".format(filter='%' if table_filter is None else table_filter)
             cursor.execute(query)
             return [table[0] for table in cursor.fetchall()]
 
-    def get_column_info(self, schema, table):
+    def get_column_info(self, table, schema=None):
         def get_col_def(row):
             # DOUBLE(10,2)
             data_type_tokens = row['Type'].split('(')

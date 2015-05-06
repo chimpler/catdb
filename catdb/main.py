@@ -1,4 +1,5 @@
 import argparse
+from contextlib import contextmanager
 import json
 import os
 from pyhocon import ConfigFactory
@@ -7,6 +8,22 @@ from catdb.db import DbManager
 
 
 def main():
+
+    @contextmanager
+    def open_output_file(filename):
+        if filename == '-':
+            yield sys.stdout
+        else:
+            with open(filename, 'w') as fd:
+                yield fd
+
+    @contextmanager
+    def open_input_file(filename):
+        if filename == '-':
+            yield sys.stdin
+        else:
+            with open(filename, 'r') as fd:
+                yield fd
 
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument('-d', '--database', help='database', required=True, action='store')
@@ -36,40 +53,28 @@ def main():
 
     db = DbManager.get_db(db_config['type'], db_config)
     if args.subparser_name == 'list':
-        print '\n'.join(db.list_tables(args.schema, args.table))
+        print '\n'.join(db.list_tables(args.table, args.schema))
     elif args.subparser_name == 'ddl':
         if args.export_file:
-            ddl_str = json.dumps(db.get_ddl(args.schema, args.table), sort_keys=True, indent=4, separators=(',', ': '))
-            if args.export_file == '-':
-                print ddl_str
-            else:
-                with open(args.export_file, 'w') as fd:
-                    fd.write(ddl_str)
+            ddl_str = json.dumps(db.get_ddl(args.table, args.schema), sort_keys=True, indent=config['ddl-format.indent'], separators=(',', ': '))
+            with open_output_file(args.export_file) as fd:
+                fd.write(ddl_str)
         elif args.import_file:
-            if args.import_file == '-':
-                ddl = json.loads(sys.stdin)
-            else:
-                with open(args.import_file, 'r') as fd:
-                    ddl = json.loads(fd.read())
-
-            table_statement = db.create_database_statement(ddl, args.database, args.schema)
-            if args.dry_run:
-                print table_statement
-            else:
-                db.execute(table_statement)
+            with open_input_file(args.import_file) as fd:
+                ddl = json.loads(fd.read())
+                table_statement = db.create_database_statement(ddl, args.database, args.schema)
+                if args.dry_run:
+                    print table_statement
+                else:
+                    db.execute(table_statement)
     elif args.subparser_name == 'data':
         if args.export_file:
-            if args.export_file == '-':
-                db.export_to_file(sys.stdout, args.schema, args.table)
-            else:
-                with open(args.export_file, 'w') as fd:
-                    db.export_to_file(fd, args.schema, args.table)
+            with open_output_file(args.export_file) as fd:
+                db.export_to_file(fd, args.table, args.schema, config['data-format.delimiter'], config['data-format.null'])
+
         elif args.import_file:
-            if args.import_file == '-':
-                db.import_to_file(sys.stdin, args.schema, args.table, args.dry_run)
-            else:
-                with open(args.import_file, 'r') as fd:
-                    db.import_from_file(fd, args.schema, args.table, args.dry_run)
+            with open_input_file(args.import_file) as fd:
+                db.import_from_file(fd, args.table, args.schema, config['data-format.delimiter'], config['data-format.null'])
 
 if __name__ == '__main__':
     main()

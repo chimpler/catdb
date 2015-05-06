@@ -26,15 +26,19 @@ class Db(object):
         )
 
     @abstractmethod
-    def list_tables(self, schema=None, table_filter=None):
+    def list_tables(self, table_filter=None, schema=None):
         pass
 
     @abstractmethod
-    def get_column_info(self, schema, table):
+    def get_column_info(self, table, schema=None):
         pass
 
     @abstractmethod
     def get_connection(self, use_dict_cursor=True):
+        pass
+
+    @abstractmethod
+    def get_cursor(self, connection):
         pass
 
     def get_ddl(self, schema=None, table_filter=None):
@@ -65,7 +69,7 @@ class Db(object):
             return dict((k, v) for k, v in row.items() if v is not None)
 
         def get_table_def(table):
-            meta = self.get_column_info(schema, table)
+            meta = self.get_column_info(table, schema)
             return {
                 'name': table,
                 'columns': [get_column_def(col) for col in meta]
@@ -120,9 +124,10 @@ class Db(object):
 
         conn.close()
 
-    def import_from_file(self, fd, schema=None, table=None, dry_run=False):
-        conn = self.get_connection()
-        reader = csv.reader(fd, delimiter='|', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+    def import_from_file(self, fd, table, schema=None, delimiter='|', null_values='\\N'):
+        """default implementation that should be overriden"""
+        conn = self.get_connection(False)
+        reader = csv.reader(fd, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
         # group rows in packets
         header = next(reader)
 
@@ -130,12 +135,10 @@ class Db(object):
             query = "INSERT INTO {schema_str}{table} ({fields})\nVALUES".format(schema_str='' if schema is None else schema + '.',
                                                                                 table=table,
                                                                                 fields=','.join(header)) \
-                    + ',\n'.join('(' + ','.join("'" + f + "'" for f in row) + ')' for row in rows) + ';'
-
-            if dry_run:
-                print(query)
-            else:
-                conn.execute(query)
+                    + ',\n'.join('(' + ','.join(("'" + f + "'") if f != '\\N' else 'NULL' for f in row) + ')' for row in rows) + ';'
+            cursor = self.get_cursor(conn)
+            cursor.execute(query)
+            conn.commit()
 
         buffer = []
         for row in reader:
@@ -147,23 +150,27 @@ class Db(object):
         if len(buffer) > 0:
             insert_all(buffer)
 
-    def export_to_file(self, fd, schema=None, table=None):
-        writer = csv.writer(fd, delimiter='|', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+    def export_to_file(self, fd, table=None, schema=None, delimiter='|', null_value='\\N'):
+        """default implementation that should be overriden"""
+        def format_row(row):
+            return [null_value if e is None else e for e in row]
+
+        writer = csv.writer(fd, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
         conn = self.get_connection(False)
         try:
-            cursor = conn.cursor()
+            cursor = self.get_cursor(conn)
             actual_table = ('' if schema is None else schema + '.') + table
             cursor.execute('SELECT * FROM ' + actual_table)
 
-            # write header
-            fields = [desc[0] for desc in cursor.description]
-            writer.writerow(fields)
-
             rows = cursor.fetchmany()
-            while rows:
-                for row in rows:
-                    writer.writerow(row)
-                rows = cursor.fetchmany()
+            if rows:
+                # write header
+                fields = [desc[0] for desc in cursor.description]
+                writer.writerow(fields)
+                while rows:
+                    formatted_rows = [format_row(row) for row in rows]
+                    writer.writerows(formatted_rows)
+                    rows = cursor.fetchmany()
         finally:
             conn.close()
 

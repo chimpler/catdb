@@ -26,7 +26,21 @@ class Postgres(Db):
             })
         return psycopg2.connect(**params)
 
-    def list_tables(self, schema=None, filter=None):
+    def get_cursor(self, connection):
+        cursor = connection.cursor('cursor')
+        return cursor
+
+    def export_to_file(self, fd, table=None, schema=None, delimiter='|', null_value='\\N'):
+        with psycopg2.connect(**self.__get_connect_params()) as conn:
+            with conn.cursor() as cursor:
+                cursor.copy_to(fd, table=table, sep=delimiter, null=null_value)
+
+    def import_from_file(self, fd, table=None, schema=None, delimiter='|', null_value='\\N'):
+        with psycopg2.connect(**self.__get_connect_params()) as conn:
+            with conn.cursor() as cursor:
+                cursor.copy_from(fd, table=table, sep=delimiter, null=null_value)
+
+    def list_tables(self, filter=None, schema=None):
         with psycopg2.connect(**self.__get_connect_params()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
@@ -38,7 +52,7 @@ class Postgres(Db):
 
     # http://stackoverflow.com/questions/2204058/list-columns-with-indexes-in-postgresql
     # http://www.alberton.info/postgresql_meta_info.html#.VT2sIhPF-d4
-    def get_column_info(self, schema, table):
+    def get_column_info(self, table, schema):
         with psycopg2.connect(**self.__get_connect_params()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(

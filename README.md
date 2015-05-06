@@ -9,6 +9,12 @@
 
 CatDB allows to migrate data from various databases.
 
+### Installation
+
+It is available on pypi so you can install it as follows:
+
+    $ pip install catdb
+
 ### Configuration
 
 Create a file `$HOME/.catdb` with the list of databases to use:
