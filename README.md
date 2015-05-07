@@ -7,6 +7,8 @@
 [![Coverage Status](https://coveralls.io/repos/chimpler/catdb/badge.svg)](https://coveralls.io/r/chimpler/catdb)
 [![Join the chat at https://gitter.im/chimpler/catdb](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/chimpler/catdb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+	Still a WIP: Do not use for production
+
 CatDB allows to migrate data from various databases.
 
 ### Installation
