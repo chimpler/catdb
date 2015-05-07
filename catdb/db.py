@@ -1,9 +1,12 @@
 from abc import abstractmethod
+from contextlib import contextmanager
 import csv
 import importlib
 import pkg_resources
 from pyhocon import ConfigFactory
+import sys
 from catdb import CatDbException
+from catdb import open_output_file, open_input_file
 
 
 class Db(object):
@@ -124,12 +127,8 @@ class Db(object):
 
         conn.close()
 
-    def import_from_file(self, fd, table, schema=None, delimiter='|', null_values='\\N'):
+    def import_from_file(self, filename, table, schema=None, delimiter='|', null_values='\\N'):
         """default implementation that should be overriden"""
-        conn = self.get_connection(False)
-        reader = csv.reader(fd, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
-        # group rows in packets
-        header = next(reader)
 
         def insert_all(rows):
             query = "INSERT INTO {schema_str}{table} ({fields})\nVALUES".format(schema_str='' if schema is None else schema + '.',
@@ -140,39 +139,46 @@ class Db(object):
             cursor.execute(query)
             conn.commit()
 
-        buffer = []
-        for row in reader:
-            buffer.append(row)
-            if len(buffer) >= Db.ROW_BUFFER_SIZE:
+        with open_input_file(filename) as fd:
+            conn = self.get_connection(False)
+            reader = csv.reader(fd, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
+            # group rows in packets
+            header = next(reader)
+
+            buffer = []
+            for row in reader:
+                buffer.append(row)
+                if len(buffer) >= Db.ROW_BUFFER_SIZE:
+                    insert_all(buffer)
+                    buffer = []
+
+            if len(buffer) > 0:
                 insert_all(buffer)
-                buffer = []
 
-        if len(buffer) > 0:
-            insert_all(buffer)
-
-    def export_to_file(self, fd, table=None, schema=None, delimiter='|', null_value='\\N'):
+    def export_to_file(self, filename, table=None, schema=None, delimiter='|', null_value='\\N'):
         """default implementation that should be overriden"""
         def format_row(row):
             return [null_value if e is None else e for e in row]
 
-        writer = csv.writer(fd, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
-        conn = self.get_connection(False)
-        try:
-            cursor = self.get_cursor(conn)
-            actual_table = ('' if schema is None else schema + '.') + table
-            cursor.execute('SELECT * FROM ' + actual_table)
+        with open_output_file(filename) as fd:
+            writer = csv.writer(fd, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
+            conn = self.get_connection(False)
+            try:
+                cursor = self.get_cursor(conn)
+                actual_table = ('' if schema is None else schema + '.') + table
+                cursor.execute('SELECT * FROM ' + actual_table)
 
-            rows = cursor.fetchmany()
-            if rows:
-                # write header
-                fields = [desc[0] for desc in cursor.description]
-                writer.writerow(fields)
-                while rows:
-                    formatted_rows = [format_row(row) for row in rows]
-                    writer.writerows(formatted_rows)
-                    rows = cursor.fetchmany()
-        finally:
-            conn.close()
+                rows = cursor.fetchmany()
+                if rows:
+                    # write header
+                    fields = [desc[0] for desc in cursor.description]
+                    writer.writerow(fields)
+                    while rows:
+                        formatted_rows = [format_row(row) for row in rows]
+                        writer.writerows(formatted_rows)
+                        rows = cursor.fetchmany()
+            finally:
+                conn.close()
 
 
 class DbManager:

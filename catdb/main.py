@@ -1,34 +1,18 @@
 import argparse
-from contextlib import contextmanager
 import json
 import os
 from pyhocon import ConfigFactory
 import sys
+from catdb import open_output_file, open_input_file
 from catdb.db import DbManager
 
 
 def main():
-
-    @contextmanager
-    def open_output_file(filename):
-        if filename == '-':
-            yield sys.stdout
-        else:
-            with open(filename, 'w') as fd:
-                yield fd
-
-    @contextmanager
-    def open_input_file(filename):
-        if filename == '-':
-            yield sys.stdin
-        else:
-            with open(filename, 'r') as fd:
-                yield fd
-
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument('-d', '--database', help='database', required=True, action='store')
     parent_parser.add_argument('-s', '--schema', help='schema', required=False, action='store', default=None)
-    parent_parser.add_argument('-t', '--table', help='table filter (using % as a wildcard)', required=False, action='store')
+    parent_parser.add_argument('-t', '--table', help='table filter (using % as a wildcard)', required=False,
+                               action='store')
     parent_parser.add_argument('-dr', '--dry-run', dest='dry_run', help='dry run', required=False, action='store_true')
 
     argparser = argparse.ArgumentParser(description='export')
@@ -45,7 +29,9 @@ def main():
     home_dir = os.environ['HOME']
     config_path = os.path.join(home_dir, '.catdb')
     if not os.path.exists(config_path):
-        sys.stderr.write('File {config_path} not found. Go to https://github.com/chimpler/catdb for more details\n'.format(config_path=config_path))
+        sys.stderr.write(
+            'File {config_path} not found. Go to https://github.com/chimpler/catdb for more details\n'.format(
+                config_path=config_path))
         sys.exit(1)
 
     config = ConfigFactory.parse_file(config_path)
@@ -56,7 +42,8 @@ def main():
         print '\n'.join(db.list_tables(args.table, args.schema))
     elif args.subparser_name == 'ddl':
         if args.export_file:
-            ddl_str = json.dumps(db.get_ddl(args.table, args.schema), sort_keys=True, indent=config['ddl-format.indent'], separators=(',', ': '))
+            ddl_str = json.dumps(db.get_ddl(args.table, args.schema), sort_keys=True,
+                                 indent=config['ddl-format.indent'], separators=(',', ': '))
             with open_output_file(args.export_file) as fd:
                 fd.write(ddl_str)
         elif args.import_file:
@@ -69,12 +56,13 @@ def main():
                     db.execute(table_statement)
     elif args.subparser_name == 'data':
         if args.export_file:
-            with open_output_file(args.export_file) as fd:
-                db.export_to_file(fd, args.table, args.schema, config['data-format.delimiter'], config['data-format.null'])
+            db.export_to_file(args.export_file, args.table, args.schema, config['data-format.delimiter'],
+                              config['data-format.null'])
 
         elif args.import_file:
-            with open_input_file(args.import_file) as fd:
-                db.import_from_file(fd, args.table, args.schema, config['data-format.delimiter'], config['data-format.null'])
+            db.import_from_file(args.import_fileport_file, args.table, args.schema, config['data-format.delimiter'],
+                                config['data-format.null'])
+
 
 if __name__ == '__main__':
     main()

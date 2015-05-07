@@ -213,6 +213,7 @@ Data import                            | :white_check_mark:
 Constraints export                     | :x:
 Constraints import                     | :x:
 Postgres                               | :white_check_mark:
+Redshift                               | :white_check_mark:
 MySQL                                  | :white_check_mark:
 Oracle                                 | :x:
 Vertica                                | :x:
@@ -227,3 +228,4 @@ Export to S3                           | :x:
 Import from S3                         | :x:
 Compatible with Turbine XML format     | :x:
 Common console                         | :x:
+Export/Import Compression              | :x: 

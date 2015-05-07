@@ -1,4 +1,5 @@
 import psycopg2
+from catdb import open_input_file, open_output_file
 from catdb.db import Db
 
 
@@ -8,7 +9,7 @@ class Postgres(Db):
     def __init__(self, params):
         super(Postgres, self).__init__('postgres', params)
 
-    def __get_connect_params(self):
+    def _get_connect_params(self):
         return {
             'database': self._params['database'],
             'host': self._params.get('hostname'),
@@ -17,9 +18,9 @@ class Postgres(Db):
             'password': self._params.get('password', None)
         }
 
-    def get_connection(self, use_dict_cursor=False, db=None):
+    def open_connection(self, use_dict_cursor=False, db=None):
         params = {}
-        params.update(self.__get_connect_params())
+        params.update(self._get_connect_params())
         if use_dict_cursor:
             params.update({
                 'cursor_factory': 'psycopg2.extras.RealDictCursor'
@@ -30,18 +31,20 @@ class Postgres(Db):
         cursor = connection.cursor('cursor')
         return cursor
 
-    def export_to_file(self, fd, table=None, schema=None, delimiter='|', null_value='\\N'):
-        with psycopg2.connect(**self.__get_connect_params()) as conn:
-            with conn.cursor() as cursor:
-                cursor.copy_to(fd, table=table, sep=delimiter, null=null_value)
+    def export_to_file(self, filename, table=None, schema=None, delimiter='|', null_value='\\N'):
+        with open_output_file(filename) as fd:
+            with psycopg2.connect(**self._get_connect_params()) as conn:
+                with conn.cursor() as cursor:
+                    cursor.copy_to(fd, table=table, sep=delimiter, null=null_value)
 
-    def import_from_file(self, fd, table=None, schema=None, delimiter='|', null_value='\\N'):
-        with psycopg2.connect(**self.__get_connect_params()) as conn:
-            with conn.cursor() as cursor:
-                cursor.copy_from(fd, table=table, sep=delimiter, null=null_value)
+    def import_from_file(self, filename, table=None, schema=None, delimiter='|', null_value='\\N'):
+        with open_input_file(filename) as fd:
+            with psycopg2.connect(**self._get_connect_params()) as conn:
+                with conn.cursor() as cursor:
+                    cursor.copy_from(fd, table=table, sep=delimiter, null=null_value)
 
     def list_tables(self, filter=None, schema=None):
-        with psycopg2.connect(**self.__get_connect_params()) as conn:
+        with psycopg2.connect(**self._get_connect_params()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     "SELECT table_name FROM information_schema.tables WHERE table_schema = '{schema}' AND table_name LIKE '{filter}'".format(
@@ -53,7 +56,7 @@ class Postgres(Db):
     # http://stackoverflow.com/questions/2204058/list-columns-with-indexes-in-postgresql
     # http://www.alberton.info/postgresql_meta_info.html#.VT2sIhPF-d4
     def get_column_info(self, table, schema):
-        with psycopg2.connect(**self.__get_connect_params()) as conn:
+        with psycopg2.connect(**self._get_connect_params()) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """SELECT

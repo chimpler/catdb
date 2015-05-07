@@ -48,7 +48,8 @@ setup(
     install_requires=[
         'pyhocon==0.3.1',
         'psycopg2==2.6',
-        'PyMySQL==0.6.6'
+        'PyMySQL==0.6.6',
+        'boto==2.38.0'
     ] + (['importlib==1.0.3'] if sys.version_info[:2] == (2, 6) else []),
     tests_require=[
         'pytest',
